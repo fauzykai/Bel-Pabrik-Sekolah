@@ -48,16 +48,18 @@ try {
             break;
 
         case 'save':
-            // Menyimpan jadwal baru atau memperbarui jadwal yang sudah ada
+            // Menyimpan jadwal baru atau memperbarui jadwal yang sudah ada (termasuk Intro, Utama, dan Outro)
             $id = (int)($_POST['id'] ?? 0);
             $name = trim($_POST['name'] ?? '');
             $time = trim($_POST['time'] ?? '');
             $days = $_POST['days'] ?? [];
-            $audio_file = trim($_POST['audio_file'] ?? '');
+            $audio_intro = trim($_POST['audio_intro'] ?? '');
+            $audio_file = trim($_POST['audio_file'] ?? ''); // Audio Utama
+            $audio_outro = trim($_POST['audio_outro'] ?? '');
             $category = trim($_POST['category'] ?? 'reguler');
 
             if (empty($name) || empty($time) || empty($audio_file)) {
-                schedule_json_response(false, 'Nama, Waktu, dan File Audio wajib diisi');
+                schedule_json_response(false, 'Nama, Waktu, dan File Audio Utama wajib diisi');
             }
 
             // Normalisasi hari (jika array, gabungkan jadi string koma)
@@ -71,17 +73,40 @@ try {
             }
 
             if ($id > 0) {
-                $stmt = $db->prepare("UPDATE schedules SET name = ?, time = ?, days = ?, audio_file = ?, category = ? WHERE id = ?");
-                $stmt->execute([$name, $time, $days_str, $audio_file, $category, $id]);
+                $stmt = $db->prepare("UPDATE schedules SET name = ?, time = ?, days = ?, audio_intro = ?, audio_file = ?, audio_outro = ?, category = ? WHERE id = ?");
+                $stmt->execute([$name, $time, $days_str, $audio_intro, $audio_file, $audio_outro, $category, $id]);
                 $msg = 'Jadwal berhasil diperbarui';
             } else {
-                $stmt = $db->prepare("INSERT INTO schedules (name, time, days, audio_file, category, is_active) VALUES (?, ?, ?, ?, ?, 1)");
-                $stmt->execute([$name, $time, $days_str, $audio_file, $category]);
+                $stmt = $db->prepare("INSERT INTO schedules (name, time, days, audio_intro, audio_file, audio_outro, category, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, 1)");
+                $stmt->execute([$name, $time, $days_str, $audio_intro, $audio_file, $audio_outro, $category]);
                 $id = (int)$db->lastInsertId();
                 $msg = 'Jadwal baru berhasil ditambahkan';
             }
 
             schedule_json_response(true, $msg, ['id' => $id]);
+            break;
+
+        case 'test_schedule':
+            // Memicu tes pemutaran berurutan: Intro -> Utama -> Outro
+            $id = (int)($_POST['id'] ?? 0);
+            $stmt = $db->prepare("SELECT * FROM schedules WHERE id = ?");
+            $stmt->execute([$id]);
+            $sch = $stmt->fetch();
+            if (!$sch) {
+                schedule_json_response(false, 'Jadwal tidak ditemukan');
+            }
+
+            $sequence = array_values(array_filter([$sch['audio_intro'], $sch['audio_file'], $sch['audio_outro']]));
+            $seq_str = implode('|', $sequence);
+            queue_audio_play($seq_str, 'Tes Jadwal: ' . $sch['name'], 'test');
+
+            if (!is_worker_running()) {
+                foreach ($sequence as $f) {
+                    play_audio_direct($f);
+                    usleep(300000);
+                }
+            }
+            schedule_json_response(true, 'Memutar rangkaian bel: ' . $sch['name']);
             break;
 
         case 'delete':

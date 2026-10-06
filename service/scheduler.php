@@ -70,21 +70,28 @@ function process_manual_queue($db) {
 
         foreach ($pending as $item) {
             $id = $item['id'];
-            $file = $item['audio_file'];
+            $file_raw = $item['audio_file'];
             $label = $item['label'] ?? 'Bel Manual';
             $trigger = $item['triggered_by'] ?? 'manual';
 
             // Update status menjadi 'playing'
             $db->prepare("UPDATE play_queue SET status = 'playing', played_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$id]);
 
-            // Eksekusi pemutaran suara
-            play_audio_file($file);
+            // Dukung pemutaran berantai jika dipisah karakter '|'
+            $files = explode('|', $file_raw);
+            foreach ($files as $file) {
+                $file = trim($file);
+                if (!empty($file)) {
+                    play_audio_file($file);
+                    usleep(300000); // Jeda 300ms antar nada
+                }
+            }
 
             // Update status menjadi 'done'
             $db->prepare("UPDATE play_queue SET status = 'done' WHERE id = ?")->execute([$id]);
 
             // Simpan ke riwayat log
-            log_bell_play(null, $label, $file, $trigger);
+            log_bell_play(null, $label, $file_raw, $trigger);
         }
     } catch (Exception $e) {
         echo "[EXC] Queue error: " . $e->getMessage() . "\n";
@@ -115,7 +122,27 @@ function process_scheduled_bells($db, $current_time, $current_day) {
             // Cek apakah hari ini termasuk dalam konfigurasi jadwal
             if (in_array((string)$current_day, $days) || in_array('all', $days)) {
                 echo "[JADWAL] Menjalankan bel: {$sch['name']} ({$sch['time']})\n";
-                play_audio_file($sch['audio_file']);
+
+                // 1. Putar Audio Intro (jika ada)
+                if (!empty($sch['audio_intro'])) {
+                    echo "[INTRO] ";
+                    play_audio_file($sch['audio_intro']);
+                    usleep(300000);
+                }
+
+                // 2. Putar Audio Utama
+                if (!empty($sch['audio_file'])) {
+                    echo "[UTAMA] ";
+                    play_audio_file($sch['audio_file']);
+                    usleep(300000);
+                }
+
+                // 3. Putar Audio Outro (jika ada)
+                if (!empty($sch['audio_outro'])) {
+                    echo "[OUTRO] ";
+                    play_audio_file($sch['audio_outro']);
+                }
+
                 log_bell_play($sch['id'], $sch['name'], $sch['audio_file'], 'schedule');
             }
         }

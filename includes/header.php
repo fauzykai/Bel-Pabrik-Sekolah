@@ -18,9 +18,10 @@ $current_vol = get_system_volume();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title><?= htmlspecialchars($page_title ?? 'Sistem Bel Otomatis STB') ?></title>
-    <!-- Offline CSS Assets -->
+    <!-- Offline CSS & JS Assets -->
     <link rel="stylesheet" href="assets/css/bootstrap.min.css">
     <link rel="stylesheet" href="assets/icons/bootstrap-icons.min.css">
+    <script src="assets/js/bootstrap.bundle.min.js"></script>
     <style>
         :root {
             --app-bg: #f8fafc;

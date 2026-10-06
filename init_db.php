@@ -35,12 +35,24 @@ try {
         name TEXT NOT NULL,
         time TEXT NOT NULL,                -- Format 'HH:MM' (contoh: '07:00')
         days TEXT NOT NULL,                -- '1,2,3,4,5' (1=Senin..7=Minggu) atau 'all'
-        audio_file TEXT NOT NULL,          -- Nama file di uploads/audio/
+        audio_intro TEXT DEFAULT '',       -- File audio pembuka (opsional)
+        audio_file TEXT NOT NULL,          -- File audio utama
+        audio_outro TEXT DEFAULT '',       -- File audio penutup (opsional)
         category TEXT DEFAULT 'reguler',   -- 'reguler', 'ujian', 'shift_1', 'shift_2'
         is_active INTEGER DEFAULT 1,       -- 1 = Aktif, 0 = Nonaktif
         play_duration INTEGER DEFAULT 0,   -- Durasi potong detik (0 = full)
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )");
+
+    // Migrasi otomatis jika tabel schedules sudah ada sebelumnya
+    $cols = $db->query("PRAGMA table_info(schedules)")->fetchAll(PDO::FETCH_ASSOC);
+    $col_names = array_column($cols, 'name');
+    if (!in_array('audio_intro', $col_names)) {
+        $db->exec("ALTER TABLE schedules ADD COLUMN audio_intro TEXT DEFAULT ''");
+    }
+    if (!in_array('audio_outro', $col_names)) {
+        $db->exec("ALTER TABLE schedules ADD COLUMN audio_outro TEXT DEFAULT ''");
+    }
 
     // 3. Tabel Antrian Pemutaran Audio Realtime (Queue)
     // Digunakan oleh Web UI untuk memberi perintah ke daemon background pemutar audio
@@ -84,14 +96,14 @@ try {
     $count = $db->query("SELECT COUNT(*) FROM schedules")->fetchColumn();
     if ($count == 0) {
         $default_schedules = [
-            ['Masuk Kerja / Masuk Sekolah', '07:00', '1,2,3,4,5,6', 'bel-masuk.wav', 'reguler', 1],
-            ['Istirahat Siang', '12:00', '1,2,3,4,5,6', 'bel-istirahat.wav', 'reguler', 1],
-            ['Masuk Setelah Istirahat', '13:00', '1,2,3,4,5,6', 'bel-masuk.wav', 'reguler', 1],
-            ['Selesai / Jam Pulang', '16:00', '1,2,3,4,5', 'bel-pulang.wav', 'reguler', 1],
-            ['Selesai Sabtu (Setengah Hari)', '14:00', '6', 'bel-pulang.wav', 'reguler', 1]
+            ['Masuk Kerja / Masuk Sekolah', '07:00', '1,2,3,4,5,6', 'chime-pendek.wav', 'bel-masuk.wav', 'chime-pendek.wav', 'reguler', 1],
+            ['Istirahat Siang', '12:00', '1,2,3,4,5,6', 'chime-pendek.wav', 'bel-istirahat.wav', 'chime-pendek.wav', 'reguler', 1],
+            ['Masuk Setelah Istirahat', '13:00', '1,2,3,4,5,6', 'chime-pendek.wav', 'bel-masuk.wav', '', 'reguler', 1],
+            ['Selesai / Jam Pulang', '16:00', '1,2,3,4,5', 'chime-pendek.wav', 'bel-pulang.wav', 'chime-pendek.wav', 'reguler', 1],
+            ['Selesai Sabtu (Setengah Hari)', '14:00', '6', 'chime-pendek.wav', 'bel-pulang.wav', '', 'reguler', 1]
         ];
 
-        $stmt_sch = $db->prepare("INSERT INTO schedules (name, time, days, audio_file, category, is_active) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt_sch = $db->prepare("INSERT INTO schedules (name, time, days, audio_intro, audio_file, audio_outro, category, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
         foreach ($default_schedules as $sch) {
             $stmt_sch->execute($sch);
         }

@@ -179,16 +179,24 @@ if (is_dir($audio_dir)) {
                                 <div class="fw-semibold <?= $is_passed ? 'text-secondary' : 'text-dark' ?>">
                                     <?= htmlspecialchars($s['name']) ?>
                                 </div>
-                                <div class="small text-muted d-flex align-items-center gap-1">
-                                    <i class="bi bi-music-note"></i> <?= htmlspecialchars($s['audio_file']) ?>
+                                <div class="small text-muted d-flex flex-wrap align-items-center gap-1">
+                                    <?php if (!empty($s['audio_intro'])): ?>
+                                        <span class="badge bg-light text-secondary border font-monospace" style="font-size: 0.65rem;">Intro: <?= htmlspecialchars($s['audio_intro']) ?></span>
+                                    <?php endif; ?>
+                                    <span class="badge bg-light text-primary border font-monospace" style="font-size: 0.65rem;">Utama: <?= htmlspecialchars($s['audio_file']) ?></span>
+                                    <?php if (!empty($s['audio_outro'])): ?>
+                                        <span class="badge bg-light text-secondary border font-monospace" style="font-size: 0.65rem;">Outro: <?= htmlspecialchars($s['audio_outro']) ?></span>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
                         <div>
                             <?php if ($is_passed): ?>
                                 <span class="badge bg-light text-secondary border">Lewat</span>
-                            <?php else: ?>
-                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="triggerManualBell('<?= htmlspecialchars($s['audio_file']) ?>', '<?= htmlspecialchars($s['name']) ?>')" title="Bunyikan Sekarang">
+                            <?php else: 
+                                $seq_files = implode('|', array_values(array_filter([$s['audio_intro'], $s['audio_file'], $s['audio_outro']])));
+                            ?>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="triggerManualBell('<?= htmlspecialchars($seq_files) ?>', '<?= htmlspecialchars($s['name']) ?>')" title="Bunyikan Sekarang">
                                     <i class="bi bi-play-fill"></i>
                                 </button>
                             <?php endif; ?>

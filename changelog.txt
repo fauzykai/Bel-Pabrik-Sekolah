@@ -1,3 +1,15 @@
+[2026-10-06] Perbaikan Modal & Fitur Rangkaian Audio Bel (Intro, Utama, Outro)
+- Memperbaiki tombol "Tambah Jadwal" dan tombol Edit (<i class="bi bi-pencil"></i>) yang sebelumnya tidak merespons:
+  * Menempatkan bootstrap.bundle.min.js di bagian head header.php agar objek bootstrap selalu siap sebelum script halaman dijalankan.
+  * Menggunakan bootstrap.Modal.getOrCreateInstance() dan data-schedule JSON aman dari potensi quote syntax error.
+- Setiap jadwal kini mendukung 3 rangkaian audio berurutan:
+  1. Audio Intro (Pembuka): Nada ding-dong / chime awal (opsional).
+  2. Audio Utama: Suara bel inti (wajib).
+  3. Audio Outro (Penutup): Nada ding-dong / chime akhir (opsional).
+- Menambahkan fitur "Tes Dengar" di HP langsung dari formulir modal jadwal sebelum menyimpan.
+- Scheduler background dan pemutar antrian kini mengeksekusi urutan Intro -> Utama -> Outro dengan jeda natural (300ms).
+- Memperbarui skema SQLite schedules dengan kolom audio_intro dan audio_outro.
+
 [2026-10-06] Inisialisasi Proyek Sistem Bel Otomatis STB Linux
 - Menyiapkan arsitektur headless STB Linux (Web UI PHP + SQLite + Background CLI Scheduler Daemon).
 - Aset offline Bootstrap 5 & Bootstrap Icons (bisa diakses tanpa koneksi internet).
