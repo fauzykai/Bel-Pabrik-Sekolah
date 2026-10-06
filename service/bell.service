@@ -1,0 +1,16 @@
+[Unit]
+Description=Layanan Bel Otomatis STB Scheduler Daemon
+After=network.target sound.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/var/www/html/bell
+ExecStart=/usr/bin/php /var/www/html/bell/service/scheduler.php
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

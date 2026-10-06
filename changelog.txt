@@ -1,0 +1,13 @@
+[2026-10-06] Inisialisasi Proyek Sistem Bel Otomatis STB Linux
+- Menyiapkan arsitektur headless STB Linux (Web UI PHP + SQLite + Background CLI Scheduler Daemon).
+- Aset offline Bootstrap 5 & Bootstrap Icons (bisa diakses tanpa koneksi internet).
+- Halaman inisialisasi database SQLite (init_db.php).
+- Modul kontrol hardware & OS (includes/system.php) untuk volume ALSA amixer, jam/NTP, WiFi nmcli, dan pemutar audio mpg123/aplay.
+- Background worker scheduler (service/scheduler.php) & systemd service (service/bell.service).
+- Generator audio starter PCM WAV (service/gen_starter_audio.php).
+- Mobile-First Dashboard (index.php) dengan jam realtime, tombol bel darurat/manual instan, sinkronisasi jam HP 1-klik, dan slider volume.
+- Manajemen Jadwal (schedules.php) dengan CRUD, multi-hari, filter kategori reguler/ujian/shift, dan toggle switch aktif/nonaktif.
+- Manajemen Koleksi Audio (audio.php) untuk upload MP3/WAV, preview di HP, dan tes di speaker STB.
+- Pengaturan WiFi (wifi.php) dengan pemindai SSID sekitar, sambungkan router, dan info hotspot darurat.
+- Pengaturan Sistem (settings.php) untuk sinkronisasi jam, zona waktu WIB/WITA/WIT, master volume, dan reboot STB.
+- Script setup otomatis Linux STB (setup.sh) dan konfigurasi izin sudoers (bell-web).
