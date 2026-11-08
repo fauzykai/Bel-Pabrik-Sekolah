@@ -41,6 +41,9 @@ try {
         category TEXT DEFAULT 'reguler',   -- 'reguler', 'ujian', 'shift_1', 'shift_2'
         is_active INTEGER DEFAULT 1,       -- 1 = Aktif, 0 = Nonaktif
         play_duration INTEGER DEFAULT 0,   -- Durasi potong detik (0 = full)
+        time_type TEXT DEFAULT 'static',   -- 'static' (jam tetap) atau 'prayer' (mengikuti waktu sholat)
+        prayer_name TEXT DEFAULT '',       -- 'subuh', 'dzuhur', 'ashar', 'maghrib', 'isya'
+        prayer_offset INTEGER DEFAULT 0,   -- Offset menit terhadap waktu sholat (misal: -5 atau +0)
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )");
 
@@ -52,6 +55,15 @@ try {
     }
     if (!in_array('audio_outro', $col_names)) {
         $db->exec("ALTER TABLE schedules ADD COLUMN audio_outro TEXT DEFAULT ''");
+    }
+    if (!in_array('time_type', $col_names)) {
+        $db->exec("ALTER TABLE schedules ADD COLUMN time_type TEXT DEFAULT 'static'");
+    }
+    if (!in_array('prayer_name', $col_names)) {
+        $db->exec("ALTER TABLE schedules ADD COLUMN prayer_name TEXT DEFAULT ''");
+    }
+    if (!in_array('prayer_offset', $col_names)) {
+        $db->exec("ALTER TABLE schedules ADD COLUMN prayer_offset INTEGER DEFAULT 0");
     }
 
     // 3. Tabel Antrian Pemutaran Audio Realtime (Queue)
@@ -84,7 +96,15 @@ try {
         ['active_category', 'reguler', 'Kategori jadwal yang sedang aktif (reguler, ujian, shift_1, shift_2)'],
         ['auto_ntp', '1', 'Sinkronisasi jam otomatis via internet NTP (1=Aktif, 0=Manual)'],
         ['admin_pin', '1234', 'PIN pengaman untuk ubah setting kritis dari HP (opsional)'],
-        ['hotspot_ssid', 'BEL-STB-SETUP', 'SSID WiFi saat mode darurat Access Point aktif']
+        ['hotspot_ssid', 'BEL-STB-SETUP', 'SSID WiFi saat mode darurat Access Point aktif'],
+        ['prayer_latitude', '-6.2088', 'Garis lintang (Latitude) lokasi untuk hisab waktu sholat'],
+        ['prayer_longitude', '106.8456', 'Garis bujur (Longitude) lokasi untuk hisab waktu sholat'],
+        ['prayer_elevation', '10', 'Ketinggian lokasi dari permukaan laut (meter dpl)'],
+        ['prayer_tune_subuh', '0', 'Koreksi penyesuaian menit waktu Subuh (+/- menit)'],
+        ['prayer_tune_dzuhur', '0', 'Koreksi penyesuaian menit waktu Dzuhur (+/- menit)'],
+        ['prayer_tune_ashar', '0', 'Koreksi penyesuaian menit waktu Ashar (+/- menit)'],
+        ['prayer_tune_maghrib', '0', 'Koreksi penyesuaian menit waktu Maghrib (+/- menit)'],
+        ['prayer_tune_isya', '0', 'Koreksi penyesuaian menit waktu Isya (+/- menit)']
     ];
 
     $stmt_setting = $db->prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES (?, ?, ?)");

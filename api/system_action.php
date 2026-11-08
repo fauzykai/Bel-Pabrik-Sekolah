@@ -8,6 +8,7 @@ header('Content-Type: application/json; charset=utf-8');
 
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/system.php';
+require_once __DIR__ . '/../includes/prayer.php';
 
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
@@ -124,6 +125,46 @@ try {
             $cat = trim($_POST['category'] ?? 'reguler');
             set_setting('active_category', $cat);
             json_response(true, "Kategori jadwal aktif diubah menjadi: {$cat}");
+            break;
+
+        case 'save_prayer_settings':
+            // Menyimpan koordinat, elevasi, dan tuning menit jadwal sholat Kemenag
+            $lat = trim($_POST['latitude'] ?? '-6.2088');
+            $lon = trim($_POST['longitude'] ?? '106.8456');
+            $elevation = trim($_POST['elevation'] ?? '10');
+            $tune_subuh = (int)($_POST['tune_subuh'] ?? 0);
+            $tune_dzuhur = (int)($_POST['tune_dzuhur'] ?? 0);
+            $tune_ashar = (int)($_POST['tune_ashar'] ?? 0);
+            $tune_maghrib = (int)($_POST['tune_maghrib'] ?? 0);
+            $tune_isya = (int)($_POST['tune_isya'] ?? 0);
+
+            set_setting('prayer_latitude', $lat);
+            set_setting('prayer_longitude', $lon);
+            set_setting('prayer_elevation', $elevation);
+            set_setting('prayer_tune_subuh', (string)$tune_subuh);
+            set_setting('prayer_tune_dzuhur', (string)$tune_dzuhur);
+            set_setting('prayer_tune_ashar', (string)$tune_ashar);
+            set_setting('prayer_tune_maghrib', (string)$tune_maghrib);
+            set_setting('prayer_tune_isya', (string)$tune_isya);
+
+            // Perbarui seluruh jadwal sholat dinamis di tabel schedules
+            $db = get_db_connection();
+            $stmt = $db->query("SELECT id, prayer_name, prayer_offset FROM schedules WHERE time_type = 'prayer'");
+            $prayer_schedules = $stmt->fetchAll();
+            $stmt_upd = $db->prepare("UPDATE schedules SET time = ? WHERE id = ?");
+            foreach ($prayer_schedules as $ps) {
+                $calcTime = calculate_prayer_schedule_time($ps['prayer_name'], (int)($ps['prayer_offset'] ?? 0));
+                $stmt_upd->execute([$calcTime, $ps['id']]);
+            }
+
+            $times = get_today_prayer_times();
+            json_response(true, 'Pengaturan waktu sholat Kemenag berhasil disimpan', ['prayer_times' => $times]);
+            break;
+
+        case 'get_prayer_times':
+            // Mengambil jadwal sholat hari ini untuk keperluan preview UI
+            $times = get_today_prayer_times();
+            json_response(true, 'Jadwal sholat berhasil dimuat', ['prayer_times' => $times]);
             break;
 
         case 'reboot_stb':

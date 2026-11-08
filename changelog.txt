@@ -1,3 +1,23 @@
+[2026-11-09] Fitur Jadwal Bel Berbasis Waktu Sholat & Tab Pengaturan Jam Sholat (Metode Kemenag RI)
+- Penambahan Tab Baru "Pengaturan Jam Sholat" pada halaman Setelan (settings.php):
+  * Pengaturan koordinat Latitude, Longitude, dan Elevasi (ketinggian dpl).
+  * Tombol deteksi otomatis koordinat GPS perangkat smartphone (HTML5 Geolocation).
+  * Tombol preset kota cepat (Jakarta, Bandung, Semarang, Yogyakarta, Surabaya, Makassar, Jayapura).
+  * Tuning menit (+/-) independen untuk tiap waktu sholat (Subuh, Dzuhur, Ashar, Maghrib, Isya).
+  * Kotak widget preview jadwal sholat hari ini berbasis metode hisab Kemenag RI (+2 menit waktu ihtiyati).
+- Penambahan opsi Jam Waktu Sholat pada Modal Tambah/Edit Jadwal Bel (schedules.php):
+  * Pengguna dapat memilih metode "Jam Statis (Tetap)" atau "Mengikuti Waktu Sholat".
+  * Pilihan sholat (Dzuhur, Ashar, Subuh, Maghrib, Isya) dengan offset menit (+/-).
+  * Contoh: "Dzuhur -5" (5 menit sebelum waktu dzuhur) atau tepat waktu sholat (+0).
+  * Preview interaktif langsung menampilkan perkiraan jam efektif hari ini sesuai koordinat & offset.
+- Engine Kalkulator Waktu Sholat Offline (includes/prayer.php):
+  * Menghitung posisi matahari, deklinasi, equation of time, transit, dan sudut waktu hisab astronomi standar Kemenag RI (Subuh -20°, Isya -18°, ihtiyati +2 menit) 100% offline tanpa internet.
+- Background Daemon Scheduler (service/scheduler.php):
+  * Memperbarui kalkulasi waktu jadwal sholat dinamis harian saat pergantian hari (tengah malam) dan saat inisialisasi worker.
+- Migrasi Database SQLite (init_db.php):
+  * Penambahan kolom time_type, prayer_name, prayer_offset pada tabel schedules.
+  * Penambahan konfigurasi default prayer_* pada tabel settings.
+
 [2026-10-06] Perbaikan Modal & Fitur Rangkaian Audio Bel (Intro, Utama, Outro)
 - Memperbaiki tombol "Tambah Jadwal" dan tombol Edit (<i class="bi bi-pencil"></i>) yang sebelumnya tidak merespons:
   * Menempatkan bootstrap.bundle.min.js di bagian head header.php agar objek bootstrap selalu siap sebelum script halaman dijalankan.

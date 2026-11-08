@@ -8,6 +8,7 @@ header('Content-Type: application/json; charset=utf-8');
 
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/system.php';
+require_once __DIR__ . '/../includes/prayer.php';
 
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
@@ -48,15 +49,31 @@ try {
             break;
 
         case 'save':
-            // Menyimpan jadwal baru atau memperbarui jadwal yang sudah ada (termasuk Intro, Utama, dan Outro)
+            // Menyimpan jadwal baru atau memperbarui jadwal yang sudah ada (termasuk Intro, Utama, Outro, serta Waktu Sholat)
             $id = (int)($_POST['id'] ?? 0);
             $name = trim($_POST['name'] ?? '');
+            $time_type = trim($_POST['time_type'] ?? 'static');
+            $prayer_name = strtolower(trim($_POST['prayer_name'] ?? ''));
+            $prayer_offset = (int)($_POST['prayer_offset'] ?? 0);
             $time = trim($_POST['time'] ?? '');
             $days = $_POST['days'] ?? [];
             $audio_intro = trim($_POST['audio_intro'] ?? '');
             $audio_file = trim($_POST['audio_file'] ?? ''); // Audio Utama
             $audio_outro = trim($_POST['audio_outro'] ?? '');
             $category = trim($_POST['category'] ?? 'reguler');
+
+            if ($time_type === 'prayer') {
+                $valid_prayers = ['subuh', 'dzuhur', 'ashar', 'maghrib', 'isya'];
+                if (!in_array($prayer_name, $valid_prayers)) {
+                    $prayer_name = 'dzuhur';
+                }
+                // Hitung jam hari ini berdasarkan waktu sholat + offset menit
+                $time = calculate_prayer_schedule_time($prayer_name, $prayer_offset);
+            } else {
+                $time_type = 'static';
+                $prayer_name = '';
+                $prayer_offset = 0;
+            }
 
             if (empty($name) || empty($time) || empty($audio_file)) {
                 schedule_json_response(false, 'Nama, Waktu, dan File Audio Utama wajib diisi');
@@ -73,17 +90,17 @@ try {
             }
 
             if ($id > 0) {
-                $stmt = $db->prepare("UPDATE schedules SET name = ?, time = ?, days = ?, audio_intro = ?, audio_file = ?, audio_outro = ?, category = ? WHERE id = ?");
-                $stmt->execute([$name, $time, $days_str, $audio_intro, $audio_file, $audio_outro, $category, $id]);
+                $stmt = $db->prepare("UPDATE schedules SET name = ?, time = ?, days = ?, audio_intro = ?, audio_file = ?, audio_outro = ?, category = ?, time_type = ?, prayer_name = ?, prayer_offset = ? WHERE id = ?");
+                $stmt->execute([$name, $time, $days_str, $audio_intro, $audio_file, $audio_outro, $category, $time_type, $prayer_name, $prayer_offset, $id]);
                 $msg = 'Jadwal berhasil diperbarui';
             } else {
-                $stmt = $db->prepare("INSERT INTO schedules (name, time, days, audio_intro, audio_file, audio_outro, category, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, 1)");
-                $stmt->execute([$name, $time, $days_str, $audio_intro, $audio_file, $audio_outro, $category]);
+                $stmt = $db->prepare("INSERT INTO schedules (name, time, days, audio_intro, audio_file, audio_outro, category, is_active, time_type, prayer_name, prayer_offset) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)");
+                $stmt->execute([$name, $time, $days_str, $audio_intro, $audio_file, $audio_outro, $category, $time_type, $prayer_name, $prayer_offset]);
                 $id = (int)$db->lastInsertId();
                 $msg = 'Jadwal baru berhasil ditambahkan';
             }
 
-            schedule_json_response(true, $msg, ['id' => $id]);
+            schedule_json_response(true, $msg, ['id' => $id, 'computed_time' => $time]);
             break;
 
         case 'test_schedule':

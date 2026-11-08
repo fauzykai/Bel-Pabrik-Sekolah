@@ -15,6 +15,7 @@ if (php_sapi_name() !== 'cli') {
 
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/system.php';
+require_once __DIR__ . '/../includes/prayer.php';
 
 echo "====================================================\n";
 echo "   SISTEM BEL OTOMATIS STB - SCHEDULER DAEMON     \n";
@@ -23,6 +24,7 @@ echo "Worker dimulai pada: " . date('Y-m-d H:i:s') . "\n";
 
 $heartbeat_file = __DIR__ . '/../database/worker_alive.txt';
 $last_checked_minute = '';
+$last_checked_date = '';
 
 /**
  * Memutar file audio menggunakan pemutar CLI Linux (mpg123 / aplay / mpv)
@@ -99,6 +101,31 @@ function process_manual_queue($db) {
 }
 
 /**
+ * Memperbarui waktu efektif pada jadwal bertipe waktu sholat (time_type = 'prayer')
+ * Dijalankan saat hari berganti atau saat service start, agar nilai 'time' selalu akurat sesuai tanggal hari ini.
+ *
+ * @param PDO $db Objek koneksi database
+ */
+function update_dynamic_prayer_schedules($db) {
+    try {
+        $stmt = $db->query("SELECT id, name, prayer_name, prayer_offset FROM schedules WHERE time_type = 'prayer'");
+        $prayer_schedules = $stmt->fetchAll();
+        if (empty($prayer_schedules)) {
+            return;
+        }
+
+        $stmt_upd = $db->prepare("UPDATE schedules SET time = ? WHERE id = ?");
+        foreach ($prayer_schedules as $ps) {
+            $calcTime = calculate_prayer_schedule_time($ps['prayer_name'], (int)($ps['prayer_offset'] ?? 0));
+            $stmt_upd->execute([$calcTime, $ps['id']]);
+            echo "[SHOLAT] Update jadwal '{$ps['name']}' ({$ps['prayer_name']} offset {$ps['prayer_offset']}m) -> {$calcTime}\n";
+        }
+    } catch (Exception $e) {
+        echo "[EXC] Prayer schedule update error: " . $e->getMessage() . "\n";
+    }
+}
+
+/**
  * Memeriksa jadwal otomatis di database untuk hari dan menit saat ini
  *
  * @param PDO $db Objek koneksi database
@@ -162,10 +189,17 @@ while (true) {
 
     $db = get_db_connection();
 
-    // 3. Proses antrian perintah instan dari HP
+    // 3. Periksa pergantian hari untuk sinkronisasi waktu sholat
+    $current_date = date('Y-m-d');
+    if ($current_date !== $last_checked_date) {
+        $last_checked_date = $current_date;
+        update_dynamic_prayer_schedules($db);
+    }
+
+    // 4. Proses antrian perintah instan dari HP
     process_manual_queue($db);
 
-    // 4. Proses jadwal otomatis
+    // 5. Proses jadwal otomatis
     $current_minute = date('H:i');
     $current_day = (int)date('N');
 

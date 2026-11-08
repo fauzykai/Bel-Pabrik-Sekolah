@@ -7,8 +7,10 @@
 
 $page_title = 'Jadwal Bel - Sistem STB';
 require_once __DIR__ . '/includes/header.php';
+require_once __DIR__ . '/includes/prayer.php';
 
 $db = get_db_connection();
+$today_prayers = get_today_prayer_times();
 
 $filter_category = $_GET['cat'] ?? 'all';
 if ($filter_category !== 'all') {
@@ -84,7 +86,15 @@ $days_map = [
                         <div class="d-flex align-items-center gap-2">
                             <span class="fs-4 fw-bold font-monospace text-primary"><?= htmlspecialchars($s['time']) ?></span>
                             <div>
-                                <span class="fw-semibold d-block text-dark"><?= htmlspecialchars($s['name']) ?></span>
+                                <div class="d-flex align-items-center gap-1 flex-wrap">
+                                    <span class="fw-semibold text-dark"><?= htmlspecialchars($s['name']) ?></span>
+                                    <?php if (($s['time_type'] ?? 'static') === 'prayer'): ?>
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 0.65rem;">
+                                            <i class="bi bi-moon-stars me-1"></i><?= ucfirst(htmlspecialchars($s['prayer_name'])) ?>
+                                            <?= (int)$s['prayer_offset'] > 0 ? '+' . (int)$s['prayer_offset'] . 'm' : ((int)$s['prayer_offset'] < 0 ? (int)$s['prayer_offset'] . 'm' : '') ?>
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
                                 <span class="badge bg-light text-secondary border text-uppercase" style="font-size: 0.65rem;">
                                     <?= htmlspecialchars($s['category']) ?>
                                 </span>
@@ -166,10 +176,28 @@ $days_map = [
                         <input type="text" class="form-control" name="name" id="schName" placeholder="Contoh: Masuk Pagi, Istirahat Siang, Jam Pulang" required>
                     </div>
 
-                    <div class="row g-2 mb-3">
+                    <!-- PILIHAN TIPE WAKTU: STATIS ATAU WAKTU SHOLAT -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold d-block mb-1">Metode Penentuan Jam</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="time_type" id="type_static" value="static" checked onchange="toggleTimeType('static')">
+                            <label class="btn btn-outline-primary btn-sm" for="type_static">
+                                <i class="bi bi-clock me-1"></i> Jam Statis (Tetap)
+                            </label>
+
+                            <input type="radio" class="btn-check" name="time_type" id="type_prayer" value="prayer" onchange="toggleTimeType('prayer')">
+                            <label class="btn btn-outline-primary btn-sm" for="type_prayer">
+                                <i class="bi bi-moon-stars me-1"></i> Mengikuti Waktu Sholat
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- BLOK INPUT JAM STATIS -->
+                    <div class="row g-2 mb-3" id="blockStaticTime">
                         <div class="col-6">
                             <label class="form-label small fw-semibold">Jam Berbunyi</label>
-                            <input type="time" class="form-control font-monospace" name="time" id="schTime" required>
+                            <input type="time" class="form-control font-monospace" name="time" id="schTime">
+                            <span class="text-muted" style="font-size: 0.7rem;">Format 24 jam</span>
                         </div>
                         <div class="col-6">
                             <label class="form-label small fw-semibold">Kategori</label>
@@ -179,6 +207,68 @@ $days_map = [
                                 <option value="shift_1">Shift 1</option>
                                 <option value="shift_2">Shift 2</option>
                             </select>
+                        </div>
+                    </div>
+
+                    <!-- BLOK INPUT WAKTU SHOLAT DENGAN OFFSET -->
+                    <div class="card bg-light border p-3 mb-3 d-none" id="blockPrayerTime">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-uppercase text-primary fw-bold small">
+                                <i class="bi bi-moon-stars-fill me-1"></i> Waktu Sholat & Offset Bunyi
+                            </span>
+                            <a href="settings.php#prayer" target="_blank" class="small text-decoration-none">
+                                <i class="bi bi-gear me-1"></i>Atur Koordinat Sholat
+                            </a>
+                        </div>
+                        <div class="row g-2 align-items-end mb-2">
+                            <div class="col-12 col-sm-4">
+                                <label class="form-label small fw-semibold mb-1">Pilih Sholat</label>
+                                <select class="form-select form-select-sm" name="prayer_name" id="schPrayerName" onchange="recalculatePrayerPreview()">
+                                    <option value="subuh">Subuh</option>
+                                    <option value="dzuhur" selected>Dzuhur</option>
+                                    <option value="ashar">Ashar</option>
+                                    <option value="maghrib">Maghrib</option>
+                                    <option value="isya">Isya</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-sm-4">
+                                <label class="form-label small fw-semibold mb-1">Offset Menit (+ / -)</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="number" class="form-control font-monospace" name="prayer_offset" id="schPrayerOffset" value="0" step="1" oninput="recalculatePrayerPreview()">
+                                    <span class="input-group-text">menit</span>
+                                </div>
+                            </div>
+                            <div class="col-12 col-sm-4">
+                                <label class="form-label small fw-semibold mb-1">Kategori</label>
+                                <select class="form-select form-select-sm" name="category_prayer" id="schCategoryPrayer">
+                                    <option value="reguler">Reguler</option>
+                                    <option value="ujian">Ujian</option>
+                                    <option value="shift_1">Shift 1</option>
+                                    <option value="shift_2">Shift 2</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Tombol Cepat Preset Offset -->
+                        <div class="d-flex align-items-center gap-1 flex-wrap pt-1 mb-2">
+                            <span class="text-muted" style="font-size: 0.7rem;">Preset Offset:</span>
+                            <button type="button" class="btn btn-sm btn-white border py-0 px-2" style="font-size: 0.7rem;" onclick="setOffsetPreset(-10)">-10 Menit</button>
+                            <button type="button" class="btn btn-sm btn-white border py-0 px-2" style="font-size: 0.7rem;" onclick="setOffsetPreset(-5)">-5 Menit (Persiapan)</button>
+                            <button type="button" class="btn btn-sm btn-white border py-0 px-2" style="font-size: 0.7rem;" onclick="setOffsetPreset(0)">Tepat Waktu (+0)</button>
+                            <button type="button" class="btn btn-sm btn-white border py-0 px-2" style="font-size: 0.7rem;" onclick="setOffsetPreset(5)">+5 Menit (Iqomah/Doa)</button>
+                            <button type="button" class="btn btn-sm btn-white border py-0 px-2" style="font-size: 0.7rem;" onclick="setOffsetPreset(10)">+10 Menit</button>
+                        </div>
+
+                        <!-- Live Hasil Jam Efektif Hari Ini -->
+                        <div class="alert alert-primary py-2 px-3 mb-0 small d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="d-block fw-semibold" id="prayerPreviewText">Dzuhur tepat waktu</span>
+                                <span class="text-secondary" style="font-size: 0.75rem;">Mengikuti perhitungan astronomi Kemenag RI</span>
+                            </div>
+                            <div class="text-end">
+                                <span class="text-secondary" style="font-size: 0.7rem;">Jam Hari Ini:</span>
+                                <span class="fs-5 fw-bold font-monospace text-primary d-block" id="prayerPreviewCalculatedTime">--:--</span>
+                            </div>
                         </div>
                     </div>
 
@@ -271,6 +361,90 @@ $days_map = [
 </div>
 
 <script>
+// Data Jadwal Sholat Hari Ini untuk kalkulasi realtime preview di formulir
+const TODAY_PRAYERS = <?= json_encode($today_prayers) ?>;
+
+/**
+ * Berpindah tampilan antara input Jam Statis vs Waktu Sholat
+ *
+ * @param {string} type 'static' atau 'prayer'
+ */
+function toggleTimeType(type) {
+    const isPrayer = type === 'prayer';
+    document.getElementById('type_static').checked = !isPrayer;
+    document.getElementById('type_prayer').checked = isPrayer;
+
+    const blockStatic = document.getElementById('blockStaticTime');
+    const blockPrayer = document.getElementById('blockPrayerTime');
+    const schTime = document.getElementById('schTime');
+
+    if (isPrayer) {
+        blockStatic.classList.add('d-none');
+        blockPrayer.classList.remove('d-none');
+        schTime.removeAttribute('required');
+        // Samakan kategori dari dropdown statis ke sholat
+        document.getElementById('schCategoryPrayer').value = document.getElementById('schCategory').value;
+        recalculatePrayerPreview();
+    } else {
+        blockStatic.classList.remove('d-none');
+        blockPrayer.classList.add('d-none');
+        schTime.setAttribute('required', 'required');
+        // Samakan kategori dari dropdown sholat ke statis
+        document.getElementById('schCategory').value = document.getElementById('schCategoryPrayer').value;
+    }
+}
+
+/**
+ * Menghitung dan memperbarui preview teks & jam sholat secara interaktif
+ */
+function recalculatePrayerPreview() {
+    const prayerSelect = document.getElementById('schPrayerName');
+    const prayerName = prayerSelect ? prayerSelect.value : 'dzuhur';
+    const prayerLabel = prayerSelect ? prayerSelect.options[prayerSelect.selectedIndex].text : 'Dzuhur';
+    const offsetInp = document.getElementById('schPrayerOffset');
+    const offset = parseInt(offsetInp ? offsetInp.value : 0) || 0;
+
+    const baseTime = TODAY_PRAYERS[prayerName] || '12:00';
+    const [h, m] = baseTime.split(':').map(Number);
+    let totalMinutes = (h * 60) + m + offset;
+    totalMinutes = ((totalMinutes % 1440) + 1440) % 1440;
+
+    const resH = String(Math.floor(totalMinutes / 60)).padStart(2, '0');
+    const resM = String(totalMinutes % 60).padStart(2, '0');
+    const calcTime = `${resH}:${resM}`;
+
+    // Update elemen UI
+    const calcElem = document.getElementById('prayerPreviewCalculatedTime');
+    const textElem = document.getElementById('prayerPreviewText');
+    if (calcElem) calcElem.textContent = calcTime;
+
+    if (textElem) {
+        if (offset === 0) {
+            textElem.textContent = `Tepat saat waktu ${prayerLabel} (${baseTime})`;
+        } else if (offset < 0) {
+            textElem.textContent = `${Math.abs(offset)} menit SEBELUM waktu ${prayerLabel} (${baseTime})`;
+        } else {
+            textElem.textContent = `${offset} menit SETELAH waktu ${prayerLabel} (${baseTime})`;
+        }
+    }
+
+    // Isi nilai jam cadangan
+    document.getElementById('schTime').value = calcTime;
+}
+
+/**
+ * Menyetel cepat preset offset menit
+ *
+ * @param {number} offset Nilai offset menit (misal: -5, 0, +5)
+ */
+function setOffsetPreset(offset) {
+    const offsetInp = document.getElementById('schPrayerOffset');
+    if (offsetInp) {
+        offsetInp.value = offset;
+        recalculatePrayerPreview();
+    }
+}
+
 /**
  * Mendapatkan instance bootstrap modal secara aman
  *
@@ -290,8 +464,14 @@ function openScheduleModal() {
     document.getElementById('schName').value = '';
     document.getElementById('schTime').value = '';
     document.getElementById('schCategory').value = 'reguler';
+    document.getElementById('schCategoryPrayer').value = 'reguler';
     document.getElementById('schAudioIntro').value = 'chime-pendek.wav';
     document.getElementById('schAudioOutro').value = '';
+
+    // Default tipe waktu statis
+    toggleTimeType('static');
+    document.getElementById('schPrayerName').value = 'dzuhur';
+    document.getElementById('schPrayerOffset').value = '0';
 
     const schAudio = document.getElementById('schAudio');
     if (schAudio.options.length > 0) {
@@ -317,9 +497,21 @@ function openEditScheduleModal(btn) {
         document.getElementById('schName').value = s.name;
         document.getElementById('schTime').value = s.time;
         document.getElementById('schCategory').value = s.category;
+        document.getElementById('schCategoryPrayer').value = s.category;
         document.getElementById('schAudioIntro').value = s.audio_intro || '';
         document.getElementById('schAudio').value = s.audio_file || '';
         document.getElementById('schAudioOutro').value = s.audio_outro || '';
+
+        // Deteksi tipe waktu (prayer vs static)
+        const timeType = s.time_type || 'static';
+        if (timeType === 'prayer') {
+            document.getElementById('schPrayerName').value = s.prayer_name || 'dzuhur';
+            document.getElementById('schPrayerOffset').value = s.prayer_offset || 0;
+            toggleTimeType('prayer');
+            recalculatePrayerPreview();
+        } else {
+            toggleTimeType('static');
+        }
 
         const days = (s.days || '').split(',');
         document.querySelectorAll('.day-check').forEach(chk => {
@@ -378,6 +570,12 @@ function saveSchedule(e) {
     const form = document.getElementById('formSchedule');
     const formData = new FormData(form);
     formData.append('action', 'save');
+
+    // Sinkronisasi kategori tergantung blok yang aktif
+    const isPrayer = document.getElementById('type_prayer').checked;
+    if (isPrayer) {
+        formData.set('category', document.getElementById('schCategoryPrayer').value);
+    }
 
     const btn = document.getElementById('btnSaveSchedule');
     btn.disabled = true;

@@ -178,6 +178,12 @@ if (is_dir($audio_dir)) {
                             <div>
                                 <div class="fw-semibold <?= $is_passed ? 'text-secondary' : 'text-dark' ?>">
                                     <?= htmlspecialchars($s['name']) ?>
+                                    <?php if (($s['time_type'] ?? 'static') === 'prayer'): ?>
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle ms-1" style="font-size: 0.65rem;">
+                                            <i class="bi bi-moon-stars me-1"></i><?= ucfirst(htmlspecialchars($s['prayer_name'])) ?>
+                                            <?= (int)$s['prayer_offset'] > 0 ? '+' . (int)$s['prayer_offset'] . 'm' : ((int)$s['prayer_offset'] < 0 ? (int)$s['prayer_offset'] . 'm' : '') ?>
+                                        </span>
+                                    <?php endif; ?>
                                 </div>
                                 <div class="small text-muted d-flex flex-wrap align-items-center gap-1">
                                     <?php if (!empty($s['audio_intro'])): ?>
