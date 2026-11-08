@@ -19,9 +19,9 @@ echo "  MEMULAI INSTALASI SISTEM BEL OTOMATIS PADA STB LINUX  "
 echo "--------------------------------------------------------"
 
 # 1. Update paket dan instalasi dependensi
-echo "[1/7] Menginstal dependensi (PHP, SQLite, ALSA, mpg123, Avahi, NetworkManager)..."
+echo "[1/7] Menginstal dependensi (PHP, SQLite, ALSA, mpg123, Avahi, NetworkManager, eSpeak-NG TTS)..."
 apt-get update -y
-apt-get install -y php-cli php-fpm php-sqlite3 sqlite3 mpg123 alsa-utils avahi-daemon network-manager nginx curl
+apt-get install -y php-cli php-fpm php-sqlite3 sqlite3 mpg123 alsa-utils avahi-daemon network-manager nginx curl espeak-ng
 
 # 2. Salin atau pastikan file berada di /var/www/html/bell
 echo "[2/7] Menyiapkan direktori aplikasi di ${APP_DIR}..."

@@ -9,6 +9,7 @@ header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/system.php';
 require_once __DIR__ . '/../includes/prayer.php';
+require_once __DIR__ . '/../includes/tts.php';
 
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
@@ -124,6 +125,45 @@ try {
                 }
             }
             schedule_json_response(true, 'Memutar rangkaian bel: ' . $sch['name']);
+            break;
+
+        case 'generate_tts':
+            // Menghasilkan file audio dari teks menggunakan salah satu dari 3 opsi engine TTS
+            $engine = trim($_POST['engine'] ?? 'google_online');
+            $text = trim($_POST['text'] ?? '');
+            $lang = trim($_POST['lang'] ?? 'id');
+
+            if (empty($text)) {
+                schedule_json_response(false, 'Teks ucapan tidak boleh kosong');
+            }
+
+            if ($engine === 'google_online') {
+                $res = TTSHelper::generateGoogleTTS($text, $lang);
+            } elseif ($engine === 'offline_stb') {
+                $res = TTSHelper::generateOfflineTTS($text, $lang);
+            } else {
+                schedule_json_response(false, 'Engine TTS tidak dikenal');
+            }
+
+            if ($res['success']) {
+                schedule_json_response(true, $res['message'], ['filename' => $res['filename']]);
+            } else {
+                schedule_json_response(false, $res['message']);
+            }
+            break;
+
+        case 'upload_browser_tts':
+            // Menerima file audio rekaman Web Speech API dari browser client
+            if (!isset($_FILES['audio_blob'])) {
+                schedule_json_response(false, 'Tidak ada file rekaman suara yang diterima');
+            }
+            $label = trim($_POST['label'] ?? 'suara_hp');
+            $res = TTSHelper::saveBrowserTTSAudio($_FILES['audio_blob'], $label);
+            if ($res['success']) {
+                schedule_json_response(true, $res['message'], ['filename' => $res['filename']]);
+            } else {
+                schedule_json_response(false, $res['message']);
+            }
             break;
 
         case 'delete':

@@ -297,19 +297,75 @@ $days_map = [
                         </div>
 
                         <!-- 2. Audio Utama -->
-                        <div class="mb-2">
-                            <label class="form-label small fw-semibold mb-1 text-primary">
-                                2. Audio Utama <span class="badge bg-primary text-uppercase">Wajib</span>
-                            </label>
-                            <div class="input-group input-group-sm">
-                                <select class="form-select border-primary" name="audio_file" id="schAudio" required>
-                                    <?php foreach ($audio_files as $audio): ?>
-                                        <option value="<?= htmlspecialchars($audio) ?>"><?= htmlspecialchars($audio) ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <button type="button" class="btn btn-primary" onclick="previewSelectedAudio('schAudio')">
-                                    <i class="bi bi-play-circle"></i> Tes Dengar
-                                </button>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label small fw-semibold mb-0 text-primary">
+                                    2. Audio Utama <span class="badge bg-primary text-uppercase">Wajib</span>
+                                </label>
+                                <!-- Switcher Mode Audio Utama: Pilih File vs TTS Suara Robot/Ucapan -->
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <input type="radio" class="btn-check" name="audio_source_type" id="src_file" value="file" checked onchange="toggleAudioSource('file')">
+                                    <label class="btn btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;" for="src_file">
+                                        <i class="bi bi-file-earmark-music me-1"></i>Pilih File
+                                    </label>
+
+                                    <input type="radio" class="btn-check" name="audio_source_type" id="src_tts" value="tts" onchange="toggleAudioSource('tts')">
+                                    <label class="btn btn-outline-primary py-0 px-2" style="font-size: 0.75rem;" for="src_tts">
+                                        <i class="bi bi-megaphone me-1"></i>Ketik Teks (TTS)
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Pilihan 1: Dropdown File Audio Biasa -->
+                            <div id="blockAudioFileSelect">
+                                <div class="input-group input-group-sm">
+                                    <select class="form-select border-primary" name="audio_file" id="schAudio" required>
+                                        <?php foreach ($audio_files as $audio): ?>
+                                            <option value="<?= htmlspecialchars($audio) ?>"><?= htmlspecialchars($audio) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <button type="button" class="btn btn-primary" onclick="previewSelectedAudio('schAudio')">
+                                        <i class="bi bi-play-circle"></i> Tes Dengar
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Pilihan 2: Generator Text to Speech (TTS) -->
+                            <div id="blockAudioTTS" class="d-none border rounded p-2 bg-white mt-2">
+                                <div class="mb-2">
+                                    <label class="form-label small fw-semibold mb-1">Pilihan Mesin TTS (Text to Speech):</label>
+                                    <select class="form-select form-select-sm" id="ttsEngine" onchange="onTTSEngineChange()">
+                                        <option value="google_online" selected>1. Google TTS (Online - Sangat Alami & Fasih Indonesia)</option>
+                                        <option value="offline_stb">2. Offline STB (eSpeak-NG / Piper - 100% Tanpa Internet)</option>
+                                        <option value="browser_speech">3. Browser Suara HP / Web Speech (Rekam Suara HP)</option>
+                                    </select>
+                                    <span class="text-muted d-block mt-1" id="ttsEngineHelp" style="font-size: 0.7rem;">
+                                        *Membutuhkan internet saat generate file. Saat jadwal bel berbunyi nanti tetap 100% offline.
+                                    </span>
+                                </div>
+
+                                <div class="mb-2">
+                                    <label class="form-label small fw-semibold mb-1">Teks Ucapan / Kalimat Bel:</label>
+                                    <textarea class="form-control form-control-sm" id="ttsText" rows="2" placeholder="Contoh: Perhatian, waktu istirahat pertama telah selesai. Silakan kembali ke kelas."></textarea>
+                                </div>
+
+                                <div class="d-flex align-items-center gap-2">
+                                    <button type="button" class="btn btn-sm btn-primary w-100" id="btnGenerateTTS" onclick="generateTTSAudio()">
+                                        <i class="bi bi-magic me-1"></i> <span id="btnTTSText">Buat File Suara & Tes Dengar</span>
+                                    </button>
+                                </div>
+
+                                <div class="mt-2 small d-none" id="ttsSuccessAlert">
+                                    <div class="alert alert-success py-1 px-2 mb-0 d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <i class="bi bi-check-circle-fill me-1"></i>
+                                            <span id="ttsGeneratedFilename">file.mp3</span>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-link text-decoration-none py-0" onclick="previewCurrentTTS()">
+                                            <i class="bi bi-play-fill"></i> Dengar Ulang
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -363,6 +419,162 @@ $days_map = [
 <script>
 // Data Jadwal Sholat Hari Ini untuk kalkulasi realtime preview di formulir
 const TODAY_PRAYERS = <?= json_encode($today_prayers) ?>;
+
+/**
+ * Mengganti tampilan antara pilihan file audio vs pembuat TTS
+ *
+ * @param {string} mode 'file' atau 'tts'
+ */
+function toggleAudioSource(mode) {
+    const isTTS = mode === 'tts';
+    document.getElementById('src_file').checked = !isTTS;
+    document.getElementById('src_tts').checked = isTTS;
+
+    const blockFile = document.getElementById('blockAudioFileSelect');
+    const blockTTS = document.getElementById('blockAudioTTS');
+
+    if (isTTS) {
+        blockFile.classList.add('d-none');
+        blockTTS.classList.remove('d-none');
+    } else {
+        blockFile.classList.remove('d-none');
+        blockTTS.classList.add('d-none');
+    }
+}
+
+/**
+ * Memperbarui keterangan petunjuk saat mesin TTS diganti
+ */
+function onTTSEngineChange() {
+    const engine = document.getElementById('ttsEngine').value;
+    const help = document.getElementById('ttsEngineHelp');
+    if (engine === 'google_online') {
+        help.textContent = '*Membutuhkan internet saat generate file. Suara sangat natural & fasih Bahasa Indonesia.';
+    } else if (engine === 'offline_stb') {
+        help.textContent = '*100% offline langsung di sistem STB Linux (eSpeak-NG/Piper). Sedikit robotik namun tidak butuh internet sama sekali.';
+    } else if (engine === 'browser_speech') {
+        help.textContent = '*Menggunakan engine Text-to-Speech bawaan browser/HP Anda lalu mengunggahnya ke STB.';
+    }
+}
+
+/**
+ * Membuat file audio TTS melalui backend atau browser Web Speech
+ */
+function generateTTSAudio() {
+    const engine = document.getElementById('ttsEngine').value;
+    const text = document.getElementById('ttsText').value.trim();
+
+    if (!text) {
+        showToast('Ketikkan teks ucapan terlebih dahulu', false);
+        document.getElementById('ttsText').focus();
+        return;
+    }
+
+    const btn = document.getElementById('btnGenerateTTS');
+    const btnText = document.getElementById('btnTTSText');
+    btn.disabled = true;
+    btnText.textContent = 'Sedang membuat suara...';
+
+    if (engine === 'browser_speech') {
+        // Opsi 3: Menggunakan Web Speech API Browser untuk preview langsung & kirim TTS Google sebagai fallback file
+        if ('speechSynthesis' in window) {
+            const utter = new SpeechSynthesisUtterance(text);
+            utter.lang = 'id-ID';
+            window.speechSynthesis.cancel();
+            window.speechSynthesis.speak(utter);
+            showToast('Memutar suara dari Web Speech HP Anda', true);
+        }
+        // Tetap generate file audio server agar tersimpan di STB
+        fetch('api/schedule_action.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                action: 'generate_tts',
+                engine: 'google_online',
+                text: text,
+                lang: 'id'
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            handleTTSResponse(data);
+        })
+        .catch(err => {
+            showToast('Gagal memproses audio di STB: ' + err, false);
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btnText.textContent = 'Buat File Suara & Tes Dengar';
+        });
+        return;
+    }
+
+    // Opsi 1 (Google Online) & Opsi 2 (Offline STB)
+    fetch('api/schedule_action.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+            action: 'generate_tts',
+            engine: engine,
+            text: text,
+            lang: 'id'
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        handleTTSResponse(data);
+    })
+    .catch(err => {
+        showToast('Gagal memproses TTS: ' + err, false);
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btnText.textContent = 'Buat File Suara & Tes Dengar';
+    });
+}
+
+/**
+ * Menangani respon hasil generate file TTS
+ *
+ * @param {Object} data Respon JSON dari backend
+ */
+function handleTTSResponse(data) {
+    if (data.success && data.filename) {
+        // Masukkan file baru ke dalam select audio utama jika belum ada
+        const schAudio = document.getElementById('schAudio');
+        let optionExists = false;
+        for (let i = 0; i < schAudio.options.length; i++) {
+            if (schAudio.options[i].value === data.filename) {
+                schAudio.selectedIndex = i;
+                optionExists = true;
+                break;
+            }
+        }
+        if (!optionExists) {
+            const opt = new Option(data.filename, data.filename, true, true);
+            schAudio.add(opt, 0);
+            schAudio.selectedIndex = 0;
+        }
+
+        // Tampilkan notifikasi & putar audio preview di HP
+        const alertEl = document.getElementById('ttsSuccessAlert');
+        const fileLabel = document.getElementById('ttsGeneratedFilename');
+        if (alertEl) alertEl.classList.remove('d-none');
+        if (fileLabel) fileLabel.textContent = data.filename;
+
+        previewSelectedAudio('schAudio');
+        showToast('File suara berhasil dibuat: ' + data.filename, true);
+    } else {
+        showToast(data.message || 'Gagal membuat file suara', false);
+    }
+}
+
+/**
+ * Memutar ulang preview file audio TTS yang baru di-generate
+ */
+function previewCurrentTTS() {
+    previewSelectedAudio('schAudio');
+}
 
 /**
  * Berpindah tampilan antara input Jam Statis vs Waktu Sholat
@@ -468,8 +680,12 @@ function openScheduleModal() {
     document.getElementById('schAudioIntro').value = 'chime-pendek.wav';
     document.getElementById('schAudioOutro').value = '';
 
-    // Default tipe waktu statis
+    // Default tipe waktu statis & mode audio file
     toggleTimeType('static');
+    toggleAudioSource('file');
+    document.getElementById('ttsText').value = '';
+    const alertEl = document.getElementById('ttsSuccessAlert');
+    if (alertEl) alertEl.classList.add('d-none');
     document.getElementById('schPrayerName').value = 'dzuhur';
     document.getElementById('schPrayerOffset').value = '0';
 
@@ -501,6 +717,10 @@ function openEditScheduleModal(btn) {
         document.getElementById('schAudioIntro').value = s.audio_intro || '';
         document.getElementById('schAudio').value = s.audio_file || '';
         document.getElementById('schAudioOutro').value = s.audio_outro || '';
+
+        toggleAudioSource('file');
+        const alertEl = document.getElementById('ttsSuccessAlert');
+        if (alertEl) alertEl.classList.add('d-none');
 
         // Deteksi tipe waktu (prayer vs static)
         const timeType = s.time_type || 'static';

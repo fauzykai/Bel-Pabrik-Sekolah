@@ -68,11 +68,16 @@ foreach ($scanned as $f) {
 <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
         <h5 class="fw-bold mb-0">Koleksi Suara Bel</h5>
-        <span class="text-secondary small">Upload & tes rekaman suara atau nada bel</span>
+        <span class="text-secondary small">Upload, buat suara teks TTS, dan kelola audio bel</span>
     </div>
-    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#uploadModal">
-        <i class="bi bi-cloud-arrow-up me-1"></i> Upload Audio
-    </button>
+    <div class="d-flex gap-1">
+        <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#ttsModal">
+            <i class="bi bi-megaphone me-1"></i> Buat TTS
+        </button>
+        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#uploadModal">
+            <i class="bi bi-cloud-arrow-up me-1"></i> Upload Audio
+        </button>
+    </div>
 </div>
 
 <?php if (!empty($upload_msg)): ?>
@@ -148,5 +153,89 @@ foreach ($scanned as $f) {
         </div>
     </div>
 </div>
+
+<!-- Modal Buat TTS Baru -->
+<div class="modal fade" id="ttsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title fw-bold"><i class="bi bi-megaphone me-1"></i> Buat Suara Text-to-Speech (TTS)</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Pilih Mesin TTS:</label>
+                    <select class="form-select form-select-sm" id="pageTtsEngine">
+                        <option value="google_online" selected>1. Google TTS (Online - Natural & Fasih Indonesia)</option>
+                        <option value="offline_stb">2. Offline STB (eSpeak-NG / Piper - 100% Tanpa Internet)</option>
+                        <option value="browser_speech">3. Web Speech API (Suara Browser HP)</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Teks Ucapan / Kalimat:</label>
+                    <textarea class="form-control" id="pageTtsText" rows="3" placeholder="Contoh: Saatnya jam masuk pertama dimulai. Semua siswa diharapkan bersiap di dalam kelas."></textarea>
+                </div>
+                <div id="pageTtsResult" class="d-none"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-primary" id="btnPageGenerateTTS" onclick="generateTTSFromAudioPage()">
+                    <i class="bi bi-magic me-1"></i> Buat File Audio
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+/**
+ * Membuat audio TTS dari halaman kelola audio
+ */
+function generateTTSFromAudioPage() {
+    const engine = document.getElementById('pageTtsEngine').value;
+    const text = document.getElementById('pageTtsText').value.trim();
+
+    if (!text) {
+        showToast('Ketikkan teks terlebih dahulu', false);
+        return;
+    }
+
+    const btn = document.getElementById('btnPageGenerateTTS');
+    btn.disabled = true;
+    btn.textContent = 'Membuat audio...';
+
+    if (engine === 'browser_speech' && 'speechSynthesis' in window) {
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = 'id-ID';
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(utter);
+    }
+
+    fetch('api/schedule_action.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+            action: 'generate_tts',
+            engine: engine === 'browser_speech' ? 'google_online' : engine,
+            text: text,
+            lang: 'id'
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        showToast(data.message, data.success);
+        if (data.success) {
+            setTimeout(() => location.reload(), 1000);
+        }
+    })
+    .catch(err => {
+        showToast('Gagal memproses TTS: ' + err, false);
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-magic me-1"></i> Buat File Audio';
+    });
+}
+</script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

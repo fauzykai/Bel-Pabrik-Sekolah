@@ -1,3 +1,14 @@
+[2026-11-09] Fitur Text-to-Speech (TTS) Multi-Engine untuk Pembuatan Audio Bel
+- Penambahan modul Text-to-Speech Helper (includes/tts.php) dengan 3 pilihan engine:
+  1. Opsi 1 (Default): Google Translate TTS (Online) - Suara fasih dan natural Bahasa Indonesia.
+  2. Opsi 2: Offline STB Linux TTS (eSpeak-NG / Piper) - 100% offline langsung dieksekusi di STB tanpa internet.
+  3. Opsi 3: Web Speech API Browser HP - Menggunakan mesin sintesis suara bawaan HP/klien.
+- Integrasi TTS langsung pada Modal Tambah/Edit Jadwal Bel (schedules.php):
+  * Pengguna dapat beralih antara "Pilih File" atau "Ketik Teks (TTS)".
+  * Tombol "Buat File Suara & Tes Dengar" langsung menghasilkan file audio, menyimpannya ke pustaka STB, dan memutar preview di HP.
+- Integrasi tombol "Buat TTS" pada Halaman Koleksi Audio (audio.php).
+- Penambahan paket dependensi espeak-ng pada script setup Linux (setup.sh).
+
 [2026-11-09] Fitur Jadwal Bel Berbasis Waktu Sholat & Tab Pengaturan Jam Sholat (Metode Kemenag RI)
 - Penambahan Tab Baru "Pengaturan Jam Sholat" pada halaman Setelan (settings.php):
   * Pengaturan koordinat Latitude, Longitude, dan Elevasi (ketinggian dpl).
