@@ -1,3 +1,16 @@
+[2026-11-09] Pembaruan Tab Setelan: Kontrol Silent Mode & Hint Perintah Terminal Service
+- Menambahkan card pengaturan Silent Mode di tab "Setelan" (settings.php):
+  * Pengguna dapat melihat status hening, menyetel durasi hening, atau langsung membatalkannya ke kondisi normal tanpa harus lewat navbar.
+- Menambahkan tabel hint perintah terminal Linux untuk layanan daemon STB (bell.service):
+  * Start: sudo systemctl start bell.service
+  * Stop: sudo systemctl stop bell.service
+  * Restart: sudo systemctl restart bell.service
+  * Status: sudo systemctl status bell.service
+  * Enable: sudo systemctl enable bell.service
+  * Disable: sudo systemctl disable bell.service
+  * Live Log: journalctl -u bell.service -f
+  * Dilengkapi tombol salin (copy to clipboard) dengan fallback otomatis untuk kemudahan saat SSH dari HP/laptop.
+
 [2026-11-09] Fitur Silent Mode (Mode Hening Bel Terjadwal)
 - Penambahan fungsi Silent Mode untuk menonaktifkan suara seluruh jadwal bel otomatis sementara waktu tanpa perlu mengubah status jadwal satu per satu.
 - Opsi durasi hening fleksibel:

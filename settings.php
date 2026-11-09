@@ -52,6 +52,51 @@ $logs = $db->query("SELECT * FROM play_logs ORDER BY played_at DESC LIMIT 10")->
 <div class="tab-content" id="settingsTabContent">
     <!-- TAB 1: SISTEM & HARDWARE -->
     <div class="tab-pane fade show active" id="tab-system" role="tabpanel">
+        <!-- Bagian 0: Mode Hening (Silent Mode) -->
+        <div class="card mb-3 bg-white border-<?= $silent_info['is_silent'] ? 'danger' : 'light' ?>">
+            <div class="card-header bg-transparent py-2 d-flex justify-content-between align-items-center">
+                <span class="fw-semibold text-secondary small text-uppercase">
+                    <i class="bi bi-bell-slash me-1"></i> Mode Hening (Silent Mode)
+                </span>
+                <?php if ($silent_info['is_silent']): ?>
+                    <span class="badge bg-danger">Hening Aktif</span>
+                <?php else: ?>
+                    <span class="badge bg-success">Normal</span>
+                <?php endif; ?>
+            </div>
+            <div class="card-body p-3">
+                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
+                    <div>
+                        <?php if ($silent_info['is_silent']): ?>
+                            <span class="fw-semibold text-danger d-block">
+                                <i class="bi bi-volume-mute-fill me-1"></i> Seluruh Jadwal Bel Otomatis Sedang Diheningkan
+                            </span>
+                            <span class="small text-muted">
+                                Berakhir pada: <strong><?= htmlspecialchars($silent_info['formatted_until']) ?></strong> (sisa <?= htmlspecialchars($silent_info['remaining_text']) ?>)
+                            </span>
+                        <?php else: ?>
+                            <span class="fw-semibold text-dark d-block">
+                                <i class="bi bi-check-circle-fill text-success me-1"></i> Jadwal Bel Berjalan Normal
+                            </span>
+                            <span class="small text-muted">
+                                Aktifkan Mode Hening saat libur, ujian, atau acara khusus tanpa mematikan jadwal satu per satu.
+                            </span>
+                        <?php endif; ?>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#silentModal">
+                            <i class="bi bi-sliders me-1"></i> <?= $silent_info['is_silent'] ? 'Ubah Durasi Hening' : 'Setel Mode Hening' ?>
+                        </button>
+                        <?php if ($silent_info['is_silent']): ?>
+                            <button type="button" class="btn btn-sm btn-danger" onclick="deactivateSilentMode()">
+                                <i class="bi bi-bell me-1"></i> Bunyikan Normal
+                            </button>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Bagian 1: Pengaturan Jam & Waktu -->
         <div class="card mb-3 bg-white">
     <div class="card-header bg-transparent py-2">
@@ -152,6 +197,92 @@ $logs = $db->query("SELECT * FROM play_logs ORDER BY played_at DESC LIMIT 10")->
                 <li>Pastikan kabel audio 3.5mm dari STB sudah dicolokkan ke input AUX amplifier pabrik/sekolah.</li>
                 <li>Simpan alamat <code>http://bel.local</code> di bookmark browser smartphone Anda.</li>
             </ul>
+        </div>
+
+        <!-- Panduan Command Service Terminal -->
+        <div class="mt-3 pt-3 border-top">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="small fw-semibold text-secondary text-uppercase">
+                    <i class="bi bi-terminal me-1"></i> Perintah Terminal Layanan (bell.service)
+                </span>
+                <span class="badge bg-light text-muted border">Linux CLI / SSH</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered align-middle mb-0 small">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 25%;">Tindakan</th>
+                            <th>Perintah Terminal</th>
+                            <th style="width: 45px;">Salin</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="badge bg-success-subtle text-success border border-success">Mulai (Start)</span></td>
+                            <td><code>sudo systemctl start bell.service</code></td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" title="Salin" onclick="copyCommand('sudo systemctl start bell.service')">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge bg-danger-subtle text-danger border border-danger">Hentikan (Stop)</span></td>
+                            <td><code>sudo systemctl stop bell.service</code></td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" title="Salin" onclick="copyCommand('sudo systemctl stop bell.service')">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge bg-primary-subtle text-primary border border-primary">Muat Ulang (Restart)</span></td>
+                            <td><code>sudo systemctl restart bell.service</code></td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" title="Salin" onclick="copyCommand('sudo systemctl restart bell.service')">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge bg-info-subtle text-info border border-info">Cek Status</span></td>
+                            <td><code>sudo systemctl status bell.service</code></td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" title="Salin" onclick="copyCommand('sudo systemctl status bell.service')">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge bg-secondary-subtle text-secondary border border-secondary">Autostart Boot (Enable)</span></td>
+                            <td><code>sudo systemctl enable bell.service</code></td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" title="Salin" onclick="copyCommand('sudo systemctl enable bell.service')">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge bg-dark-subtle text-dark border border-dark">Nonaktif Boot (Disable)</span></td>
+                            <td><code>sudo systemctl disable bell.service</code></td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" title="Salin" onclick="copyCommand('sudo systemctl disable bell.service')">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge bg-light text-dark border">Live Log (Journal)</span></td>
+                            <td><code>journalctl -u bell.service -f</code></td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" title="Salin" onclick="copyCommand('journalctl -u bell.service -f')">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
@@ -483,6 +614,44 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 });
+
+/**
+ * Menyalin teks perintah terminal ke clipboard
+ *
+ * @param {string} text Perintah terminal
+ */
+function copyCommand(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+            showToast('Perintah disalin ke clipboard: ' + text, true);
+        }).catch(() => {
+            fallbackCopyText(text);
+        });
+    } else {
+        fallbackCopyText(text);
+    }
+}
+
+/**
+ * Fallback salin teks untuk browser yang membatasi clipboard API
+ *
+ * @param {string} text
+ */
+function fallbackCopyText(text) {
+    const el = document.createElement('textarea');
+    el.value = text;
+    el.style.position = 'fixed';
+    el.style.opacity = '0';
+    document.body.appendChild(el);
+    el.select();
+    try {
+        document.execCommand('copy');
+        showToast('Perintah disalin ke clipboard: ' + text, true);
+    } catch (e) {
+        prompt('Salin perintah ini secara manual:', text);
+    }
+    document.body.removeChild(el);
+}
 </script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>
