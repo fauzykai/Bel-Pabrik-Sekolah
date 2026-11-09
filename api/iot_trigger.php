@@ -32,6 +32,8 @@ try {
     $stmt->execute([$button_num]);
     $btn = $stmt->fetch();
 
+    $client_ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+
     if (!$btn) {
         http_response_code(404);
         echo json_encode([
@@ -42,6 +44,12 @@ try {
     }
 
     if (!$btn['is_active']) {
+        // Catat ke log histori pemencetan dengan status 'disabled'
+        try {
+            $stmt_log = $db->prepare("INSERT INTO iot_press_logs (button_number, button_name, audio_played, client_ip, status) VALUES (?, ?, ?, ?, 'disabled')");
+            $stmt_log->execute([$button_num, $btn['name'], $btn['audio_file'], $client_ip]);
+        } catch (Exception $e) {}
+
         echo json_encode([
             'success' => false,
             'message' => "Tombol {$button_num} ({$btn['name']}) sedang dinonaktifkan."
@@ -83,9 +91,15 @@ try {
             curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 1);
             @curl_exec($ch);
             curl_close($ch);
-            $forward_status = "Forwarded to {$forward_ip}";
+            $forward_status = "Relay ke {$forward_ip}";
         }
     }
+
+    // Catat histori pemencetan tombol ke iot_press_logs
+    try {
+        $stmt_log = $db->prepare("INSERT INTO iot_press_logs (button_number, button_name, audio_played, client_ip, status, multi_stb_relay) VALUES (?, ?, ?, ?, 'success', ?)");
+        $stmt_log->execute([$button_num, $btn['name'], $seq_str, $client_ip, $forward_status]);
+    } catch (Exception $e) {}
 
     echo json_encode([
         'success' => true,

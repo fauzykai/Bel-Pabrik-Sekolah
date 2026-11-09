@@ -1,3 +1,17 @@
+[2026-11-09] Fitur Histori & Analisa Pemencetan Tombol Bel IoT (CCTV Sync)
+- Penambahan tabel SQLite `iot_press_logs` dengan index waktu dan nomor tombol.
+- Endpoint Webhook IoT (`api/iot_trigger.php`) & tes UI (`api/iot_action.php`):
+  * Mencatat timestamp presisi detik (`YYYY-MM-DD HH:MM:SS`), nama/lokasi tombol, audio yang dibunyikan, IP pengirim perangkat ESP, status eksekusi, dan status relay multi-STB.
+  * Tetap mencatat log tombol yang ditekan saat status tombol nonaktif (status: 'disabled') untuk keperluan deteksi insiden.
+- Penambahan Tab Baru pada Halaman Bel IoT (`iot.php`):
+  * Tab 1: Pengaturan 12 Tombol
+  * Tab 2: Riwayat & Analisa CCTV
+- Fitur Investigasi CCTV & Analisis Perilaku:
+  * Statistik ringkas: Total pencetan hari ini dan tombol terpopuler (paling sering ditekan).
+  * Filter tanggal kejadian dan filter nomor/lokasi tombol tertentu.
+  * Fitur ekspor data log ke format file CSV/Excel untuk lampiran investigasi keamanan/audit.
+  * Fitur pembersihan log berkala (opsi retensi log > 30 hari atau pembersihan menyeluruh).
+
 [2026-11-09] Pembaruan Tab Setelan: Kontrol Silent Mode & Hint Perintah Terminal Service
 - Menambahkan card pengaturan Silent Mode di tab "Setelan" (settings.php):
   * Pengguna dapat melihat status hening, menyetel durasi hening, atau langsung membatalkannya ke kondisi normal tanpa harus lewat navbar.

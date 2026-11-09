@@ -107,13 +107,13 @@ try {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         audio_file TEXT NOT NULL,
         label TEXT,
-        triggered_by TEXT DEFAULT 'manual', -- 'manual', 'schedule', 'test'
+        triggered_by TEXT DEFAULT 'manual', -- 'manual', 'schedule', 'test', 'iot'
         status TEXT DEFAULT 'pending',      -- 'pending', 'playing', 'done', 'failed'
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         played_at DATETIME
     )");
 
-    // 4. Tabel Riwayat / Log Pemutaran Bel
+    // 5. Tabel Riwayat / Log Pemutaran Bel
     $db->exec("CREATE TABLE IF NOT EXISTS play_logs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         schedule_id INTEGER NULL,
@@ -122,6 +122,20 @@ try {
         triggered_by TEXT DEFAULT 'schedule',
         played_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )");
+
+    // 6. Tabel Histori Khusus Pemencetan Tombol Bel IoT (untuk CCTV & analisa kebiasaan)
+    $db->exec("CREATE TABLE IF NOT EXISTS iot_press_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        button_number INTEGER NOT NULL,
+        button_name TEXT NOT NULL,
+        audio_played TEXT,
+        client_ip TEXT,
+        status TEXT DEFAULT 'success',      -- 'success', 'disabled', 'error'
+        multi_stb_relay TEXT,
+        pressed_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )");
+    $db->exec("CREATE INDEX IF NOT EXISTS idx_iot_press_time ON iot_press_logs(pressed_at)");
+    $db->exec("CREATE INDEX IF NOT EXISTS idx_iot_press_button ON iot_press_logs(button_number)");
 
     // Inisialisasi Pengaturan Default
     $default_settings = [
