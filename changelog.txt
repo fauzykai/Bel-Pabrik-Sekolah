@@ -1,3 +1,18 @@
+[2026-11-09] Fitur Tab Bel IoT (12 Tombol ESP) & Multi-STB Relay (Lantai 1 & 2)
+- Penambahan halaman baru "Bel IoT" (iot.php) dan tab navigasi mobile:
+  * Pemetaan 12 tombol ESP fisik ke rangkaian audio (Intro, Utama, Outro).
+  * Pengaturan nama lokasi tombol (misal: "Tombol 1 - Pos Satpam", "Tombol 2 - Ruang Guru").
+  * Tombol switch aktif/nonaktif independen untuk setiap tombol.
+  * Tombol "Tes Bunyi" dan riwayat waktu tombol terakhir ditekan.
+- Dukungan Multi-STB (2 STB di Lantai 1 & Lantai 2):
+  * Fitur relay sinkronisasi otomatis: jika tombol ditekan, STB Utama (Lantai 1) membunyikan audio lokal sekaligus menembak API STB Kedua (Lantai 2) secara asynchronous dalam jaringan lokal yang sama.
+- Endpoint Webhook IoT (api/iot_trigger.php):
+  * Menerima request HTTP GET/POST dari ESP32 / ESP8266: http://<ip-stb>/api/iot_trigger.php?button=1
+- Template Kode Arduino C++ ESP32/ESP8266:
+  * Disediakan modal dialog berisi sketch Arduino siap pakai dengan internal pullup dan auto reconnect.
+- Database:
+  * Pembuatan tabel iot_buttons dan setting iot_secondary_stb_ip.
+
 [2026-11-09] Fitur Text-to-Speech (TTS) Multi-Engine untuk Pembuatan Audio Bel
 - Penambahan modul Text-to-Speech Helper (includes/tts.php) dengan 3 pilihan engine:
   1. Opsi 1 (Default): Google Translate TTS (Online) - Suara fasih dan natural Bahasa Indonesia.

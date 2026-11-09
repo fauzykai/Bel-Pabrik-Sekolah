@@ -27,8 +27,7 @@ function get_system_volume() {
         return (int)get_setting('volume', 80);
     }
 
-    $card = escapeshellarg(get_setting('audio_device', 'default'));
-    $output = @shell_exec("amixer -D {$card} sget Master 2>/dev/null || amixer sget Master 2>/dev/null");
+    $output = @shell_exec("amixer sget 'ACODEC' 2>/dev/null || amixer sget Master 2>/dev/null");
     if ($output && preg_match('/\[(\d+)%\]/', $output, $matches)) {
         return (int)$matches[1];
     }
@@ -49,9 +48,9 @@ function set_system_volume($percentage) {
         return true; // Sukses secara logis di Windows
     }
 
-    $card = escapeshellarg(get_setting('audio_device', 'default'));
-    // Eksekusi amixer dengan sudo (sesuai aturan sudoers www-data)
-    $cmd = "sudo amixer -D {$card} -q sset Master {$percentage}% 2>/dev/null || sudo amixer -q sset Master {$percentage}% 2>/dev/null";
+    // Hitung level volume 0 - 255 untuk ACODEC (SoC Amlogic S905X DAC)
+    $val255 = (int)round(($percentage / 100) * 255);
+    $cmd = "sudo amixer -q sset 'ACODEC' {$val255} 2>/dev/null; sudo amixer -q sset 'AIU ACODEC OUT EN' on 2>/dev/null; sudo amixer -q sset Master {$percentage}% 2>/dev/null";
     @shell_exec($cmd);
     return true;
 }

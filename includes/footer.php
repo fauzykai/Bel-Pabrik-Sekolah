@@ -16,15 +16,15 @@
         <i class="bi bi-calendar3"></i>
         <span>Jadwal</span>
     </a>
+    <a href="iot.php" class="<?= $current_page === 'iot.php' ? 'active' : '' ?>">
+        <i class="bi bi-bell-fill"></i>
+        <span>Bel IoT</span>
+    </a>
     <a href="audio.php" class="<?= $current_page === 'audio.php' ? 'active' : '' ?>">
         <i class="bi bi-music-note-beamed"></i>
         <span>Audio</span>
     </a>
-    <a href="wifi.php" class="<?= $current_page === 'wifi.php' ? 'active' : '' ?>">
-        <i class="bi bi-wifi"></i>
-        <span>WiFi</span>
-    </a>
-    <a href="settings.php" class="<?= in_array($current_page, ['settings.php', 'time.php']) ? 'active' : '' ?>">
+    <a href="settings.php" class="<?= in_array($current_page, ['settings.php', 'time.php', 'wifi.php']) ? 'active' : '' ?>">
         <i class="bi bi-sliders"></i>
         <span>Setelan</span>
     </a>

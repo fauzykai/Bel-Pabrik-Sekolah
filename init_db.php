@@ -66,7 +66,42 @@ try {
         $db->exec("ALTER TABLE schedules ADD COLUMN prayer_offset INTEGER DEFAULT 0");
     }
 
-    // 3. Tabel Antrian Pemutaran Audio Realtime (Queue)
+    // 3. Tabel Pemetaan Tombol IoT (ESP 12 Tombol)
+    $db->exec("CREATE TABLE IF NOT EXISTS iot_buttons (
+        button_number INTEGER PRIMARY KEY, -- 1 s/d 12
+        name TEXT NOT NULL,                -- Label tombol (misal: 'Tombol 1 - Pos Satpam')
+        audio_intro TEXT DEFAULT '',       -- File audio pembuka (opsional)
+        audio_file TEXT NOT NULL,          -- File audio utama yang dibunyikan
+        audio_outro TEXT DEFAULT '',       -- File audio penutup (opsional)
+        is_active INTEGER DEFAULT 1,       -- 1 = Aktif, 0 = Nonaktif
+        last_triggered DATETIME NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )");
+
+    // Inisialisasi 12 tombol default jika tabel baru
+    $count_iot = $db->query("SELECT COUNT(*) FROM iot_buttons")->fetchColumn();
+    if ($count_iot == 0) {
+        $stmt_iot = $db->prepare("INSERT INTO iot_buttons (button_number, name, audio_intro, audio_file, audio_outro, is_active) VALUES (?, ?, ?, ?, ?, ?)");
+        $default_audios = [
+            1 => ['Tombol 1 - Bel Masuk', 'chime-pendek.wav', 'bel-masuk.wav', ''],
+            2 => ['Tombol 2 - Bel Istirahat', 'chime-pendek.wav', 'bel-istirahat.wav', ''],
+            3 => ['Tombol 3 - Bel Pulang', 'chime-pendek.wav', 'bel-pulang.wav', ''],
+            4 => ['Tombol 4 - Chime Pengumuman', '', 'chime-pendek.wav', ''],
+            5 => ['Tombol 5 - Bel 5', '', 'chime-pendek.wav', ''],
+            6 => ['Tombol 6 - Bel 6', '', 'chime-pendek.wav', ''],
+            7 => ['Tombol 7 - Bel 7', '', 'chime-pendek.wav', ''],
+            8 => ['Tombol 8 - Bel 8', '', 'chime-pendek.wav', ''],
+            9 => ['Tombol 9 - Bel 9', '', 'chime-pendek.wav', ''],
+            10 => ['Tombol 10 - Bel 10', '', 'chime-pendek.wav', ''],
+            11 => ['Tombol 11 - Bel 11', '', 'chime-pendek.wav', ''],
+            12 => ['Tombol 12 - Bel 12', '', 'chime-pendek.wav', '']
+        ];
+        foreach ($default_audios as $btn_num => $data) {
+            $stmt_iot->execute([$btn_num, $data[0], $data[1], $data[2], $data[3], 1]);
+        }
+    }
+
+    // 4. Tabel Antrian Pemutaran Audio Realtime (Queue)
     // Digunakan oleh Web UI untuk memberi perintah ke daemon background pemutar audio
     $db->exec("CREATE TABLE IF NOT EXISTS play_queue (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
