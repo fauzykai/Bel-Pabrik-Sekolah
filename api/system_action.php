@@ -50,12 +50,15 @@ try {
             $stmt->execute([$activeCat, $currentTime]);
             $nextSchedule = $stmt->fetch();
 
+            $silentStatus = get_silent_mode_status();
+
             json_response(true, 'Status berhasil diambil', [
                 'time_info' => $timeInfo,
                 'volume' => $volume,
                 'network' => $netInfo,
                 'worker_active' => $workerActive,
-                'next_schedule' => $nextSchedule ?: null
+                'next_schedule' => $nextSchedule ?: null,
+                'silent_mode' => $silentStatus
             ]);
             break;
 
@@ -165,6 +168,31 @@ try {
             // Mengambil jadwal sholat hari ini untuk keperluan preview UI
             $times = get_today_prayer_times();
             json_response(true, 'Jadwal sholat berhasil dimuat', ['prayer_times' => $times]);
+            break;
+
+        case 'set_silent_mode':
+            // Mengatur mode hening (Silent Mode) dengan opsi jam atau tanggal/jam spesifik
+            $mode_type = trim($_POST['mode_type'] ?? 'hours'); // 'hours' atau 'datetime'
+            if ($mode_type === 'hours') {
+                $hours = (float)($_POST['hours'] ?? 1);
+                $res = set_silent_mode($hours);
+            } else {
+                $datetime = trim($_POST['datetime'] ?? '');
+                $res = set_silent_mode($datetime);
+            }
+
+            if ($res) {
+                $status = get_silent_mode_status();
+                json_response(true, "Mode Hening diaktifkan hingga {$status['formatted_until']} ({$status['remaining_text']})", $status);
+            } else {
+                json_response(false, 'Gagal mengaktifkan mode hening. Pastikan tanggal/jam berada di masa depan.');
+            }
+            break;
+
+        case 'clear_silent_mode':
+            // Mematikan mode hening seketika
+            clear_silent_mode();
+            json_response(true, 'Mode Hening dimatikan. Bel otomatis aktif normal kembali.');
             break;
 
         case 'reboot_stb':

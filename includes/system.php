@@ -292,6 +292,83 @@ function play_audio_direct($audio_file_name) {
 }
 
 /**
+ * Mengecek apakah STB sedang dalam Mode Silent (Hening)
+ *
+ * @return array ['is_silent' => bool, 'silent_until' => string, 'remaining_text' => string]
+ */
+function get_silent_mode_status() {
+    $silent_until = get_setting('silent_until', '');
+    if (empty($silent_until)) {
+        return ['is_silent' => false, 'silent_until' => '', 'remaining_text' => ''];
+    }
+
+    $until_ts = strtotime($silent_until);
+    $now_ts = time();
+
+    if ($until_ts > $now_ts) {
+        $diff_sec = $until_ts - $now_ts;
+        $hours = floor($diff_sec / 3600);
+        $minutes = floor(($diff_sec % 3600) / 60);
+
+        $text = '';
+        if ($hours > 24) {
+            $days = floor($hours / 24);
+            $rem_h = $hours % 24;
+            $text = "{$days} hari {$rem_h} jam";
+        } elseif ($hours > 0) {
+            $text = "{$hours} jam {$minutes} menit";
+        } else {
+            $text = "{$minutes} menit";
+        }
+
+        return [
+            'is_silent' => true,
+            'silent_until' => $silent_until,
+            'remaining_text' => $text,
+            'formatted_until' => date('d M Y H:i', $until_ts)
+        ];
+    } else {
+        // Durasi silent sudah habis otomatis
+        return ['is_silent' => false, 'silent_until' => '', 'remaining_text' => ''];
+    }
+}
+
+/**
+ * Mengatur Mode Silent STB
+ *
+ * @param string|int $hours_or_datetime Jumlah jam (misal 1, 2, 4) atau format datetime 'Y-m-d H:i'
+ * @return bool
+ */
+function set_silent_mode($hours_or_datetime) {
+    if (empty($hours_or_datetime)) {
+        return set_setting('silent_until', '');
+    }
+
+    if (is_numeric($hours_or_datetime)) {
+        $hours = (float)$hours_or_datetime;
+        $until_ts = time() + (int)round($hours * 3600);
+        $until_str = date('Y-m-d H:i:s', $until_ts);
+    } else {
+        $parsed = strtotime($hours_or_datetime);
+        if ($parsed === false || $parsed <= time()) {
+            return false;
+        }
+        $until_str = date('Y-m-d H:i:s', $parsed);
+    }
+
+    return set_setting('silent_until', $until_str);
+}
+
+/**
+ * Menonaktifkan Mode Silent seketika
+ *
+ * @return bool
+ */
+function clear_silent_mode() {
+    return set_setting('silent_until', '');
+}
+
+/**
  * Mengubah index hari (1-7) menjadi nama hari dalam bahasa Indonesia
  *
  * @param int $dayNum Nomor hari (1=Senin, 7=Minggu)

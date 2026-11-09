@@ -1,3 +1,17 @@
+[2026-11-09] Fitur Silent Mode (Mode Hening Bel Terjadwal)
+- Penambahan fungsi Silent Mode untuk menonaktifkan suara seluruh jadwal bel otomatis sementara waktu tanpa perlu mengubah status jadwal satu per satu.
+- Opsi durasi hening fleksibel:
+  * Berdasarkan hitungan jam preset (1, 2, 4, 8, 24, 48 jam) atau kustom jam (misal 3.5 jam).
+  * Berdasarkan batas tanggal dan jam spesifik (datetime picker).
+- Integrasi UI & UX:
+  * Tombol / badge indikator Silent Mode di top navbar header (ikon bell-slash).
+  * Banner peringatan visual di bagian atas Dashboard (index.php) saat hening aktif beserta informasi sisa waktu dan tombol "Bunyikan Normal".
+  * Modal global pengaturan Silent Mode yang dapat dipanggil dari halaman manapun.
+- Backend & Daemon Scheduler:
+  * Penambahan fungsi get_silent_mode_status(), set_silent_mode(), dan clear_silent_mode() pada includes/system.php.
+  * service/scheduler.php secara otomatis memeriksa status hening sebelum memproses antrean jadwal.
+  * Action set_silent_mode dan clear_silent_mode pada api/system_action.php.
+
 [2026-11-09] Fitur Tab Bel IoT (12 Tombol ESP) & Multi-STB Relay (Lantai 1 & 2)
 - Penambahan halaman baru "Bel IoT" (iot.php) dan tab navigasi mobile:
   * Pemetaan 12 tombol ESP fisik ke rangkaian audio (Intro, Utama, Outro).

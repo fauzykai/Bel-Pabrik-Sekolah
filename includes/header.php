@@ -11,6 +11,7 @@ $time_info = get_system_time_info();
 $net_info = get_network_info();
 $worker_active = is_worker_running();
 $current_vol = get_system_volume();
+$silent_info = get_silent_mode_status();
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -126,6 +127,12 @@ $current_vol = get_system_volume();
 
         <!-- Status Badges -->
         <div class="d-flex align-items-center gap-2 ms-auto">
+            <!-- Silent Mode Badge / Indicator -->
+            <button type="button" class="btn btn-sm py-0 px-2 d-flex align-items-center gap-1 <?= $silent_info['is_silent'] ? 'btn-danger' : 'btn-outline-light' ?>" style="font-size: 0.75rem;" data-bs-toggle="modal" data-bs-target="#silentModal" title="Mode Hening / Silent Bel">
+                <i class="bi <?= $silent_info['is_silent'] ? 'bi-bell-slash-fill' : 'bi-bell' ?>"></i>
+                <span><?= $silent_info['is_silent'] ? 'Silent (' . htmlspecialchars($silent_info['remaining_text']) . ')' : 'Normal' ?></span>
+            </button>
+
             <span class="badge d-flex align-items-center gap-1 <?= $worker_active ? 'bg-success' : 'bg-warning text-dark' ?>" title="Status Pemutar Suara">
                 <span class="status-dot <?= $worker_active ? 'bg-light' : 'bg-dark' ?>"></span>
                 <span class="d-none d-sm-inline"><?= $worker_active ? 'Service Aktif' : 'Standby' ?></span>

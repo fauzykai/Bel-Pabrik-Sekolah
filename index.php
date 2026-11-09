@@ -38,6 +38,31 @@ if (is_dir($audio_dir)) {
 }
 ?>
 
+<?php if (!empty($silent_info['is_silent'])): ?>
+<!-- Alert Peringatan Mode Hening Aktif -->
+<div class="alert alert-danger d-flex align-items-center justify-content-between p-3 mb-3 border-danger shadow-sm">
+    <div class="d-flex align-items-center">
+        <i class="bi bi-bell-slash-fill fs-3 text-danger me-3"></i>
+        <div>
+            <div class="fw-bold">MODE HENING (SILENT) SEDANG AKTIF</div>
+            <div class="small">
+                Semua jadwal bel otomatis diheningkan sampai: 
+                <strong><?= htmlspecialchars($silent_info['formatted_until']) ?></strong> 
+                (sisa <?= htmlspecialchars($silent_info['remaining_text']) ?>)
+            </div>
+        </div>
+    </div>
+    <div class="d-flex gap-2">
+        <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#silentModal">
+            Ubah
+        </button>
+        <button type="button" class="btn btn-sm btn-danger" onclick="deactivateSilentMode()">
+            Bunyikan Normal
+        </button>
+    </div>
+</div>
+<?php endif; ?>
+
 <!-- Widget Jam & Status STB -->
 <div class="row g-3 mb-3">
     <div class="col-12 col-md-7">

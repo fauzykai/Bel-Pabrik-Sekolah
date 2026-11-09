@@ -134,6 +134,13 @@ function update_dynamic_prayer_schedules($db) {
  */
 function process_scheduled_bells($db, $current_time, $current_day) {
     try {
+        // Cek apakah sistem sedang dalam mode Hening / Silent Mode
+        $silent_status = get_silent_mode_status();
+        if ($silent_status['is_silent']) {
+            echo "[SILENT] Mode Hening aktif hingga {$silent_status['silent_until']} ({$silent_status['remaining_text']}). Jadwal {$current_time} diheningkan.\n";
+            return;
+        }
+
         $active_category = get_setting('active_category', 'reguler');
 
         // Ambil jadwal yang aktif pada waktu dan kategori saat ini
